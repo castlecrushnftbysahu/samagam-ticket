@@ -10,7 +10,7 @@
 body{background:#f0f2f5;padding:6px;padding-bottom:40px}
 .top-bar{position:sticky;top:0;background:#f0f2f5;padding:4px 0;z-index:100;display:flex;justify-content:flex-end;align-items:center;gap:6px}
 .icon-btn{background:#082845;color:#fff;border:0;width:28px;height:28px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 3px #0003}
-.icon-btn.saving{background:#198754}
+.icon-btn.saving{background:#198754;color:#fff}
 .icon-btn:disabled{opacity:.4;cursor:not-allowed}
 .search-container{display:none;flex:1;align-items:center;position:relative}
 .search-container.active{display:flex}
@@ -23,7 +23,7 @@ body{background:#f0f2f5;padding:6px;padding-bottom:40px}
 .status-bar{font-size:8px;margin:4px 0;text-align:center;font-weight:700}
 .status-online{color:#137748}.status-offline{color:#b71515}
 .group-card{margin-bottom:8px;border:1px solid #082845;background:#fff;box-shadow:0 1px 2px #0000000d}
-.group-header{background:#082845;color:#fff;padding:3px 6px;display:flex;justify-content:space-between;align-items:center;font-size:8.5px;font-weight:700}
+.group-header{background:#082845;color:#fff;padding:3px 6px;display:flex;justify-content:space-between;align-items:center;font-size:8.5px;font-weight:700;flex-wrap:wrap;gap:4px}
 .table-container{overflow-x:auto;width:100%}
 table{width:100%;border-collapse:collapse;min-width:650px}
 th{background:#fff;color:#222;font-size:7px;border:1px solid #d9d9d9;padding:3px 2px;text-align:center;font-weight:700}
@@ -39,6 +39,9 @@ td{border:1px solid #e0e0e0;font-size:7.5px;padding:3px 2px;text-align:center;co
 .login-box h2{text-align:center;color:#082845;font-size:18px;margin-bottom:5px}
 .login-box p{text-align:center;color:#666;font-size:11px;margin-bottom:16px}
 .login-box input{width:100%;padding:11px;margin:5px 0;border:1px solid #bbb;border-radius:7px;font-size:13px;outline:0}
+.pwd-wrap{position:relative;width:100%;margin:5px 0}
+.pwd-wrap input{margin:0;padding-right:42px}
+.pwd-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:0;font-size:16px;cursor:pointer;padding:4px 8px;line-height:1}
 .login-btn{width:100%;padding:11px;border:0;border-radius:7px;background:#082845;color:#fff;font-weight:700;margin-top:8px}
 .login-msg{text-align:center;font-size:11px;margin-top:10px;color:#b71515;min-height:16px}
 .hidden{display:none!important}
@@ -47,18 +50,12 @@ td{border:1px solid #e0e0e0;font-size:7.5px;padding:3px 2px;text-align:center;co
 .pnr-cell{cursor:pointer}
 .pnr-link{color:#0645ad;text-decoration:underline;font-weight:800;cursor:pointer}
 .pnr-cell:hover .pnr-link{opacity:.75}
-
 mark.search-hl{background:#ffe066;color:#000;padding:0 1px;border-radius:2px}
-
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.icon-btn.saving{background:#198754;animation:spin 1s linear infinite}
-
 .offline-banner{position:sticky;top:0;z-index:999;background:#b71515;color:#fff;text-align:center;font-size:11px;font-weight:700;padding:6px 8px;box-shadow:0 2px 6px #0003;animation:blink 1.5s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.7}}
-
 @media print {
   body{background:#fff;padding:0}
-  .top-bar,#filterBar,#loginOverlay,#modeStatus,#syncStatus,.icon-btn,.filter-btn,.search-container,.offline-banner{display:none !important}
+  .top-bar,#filterBar,#loginOverlay,#modeStatus,#syncStatus,#lastUpdated,.icon-btn,.filter-btn,.search-container,.offline-banner,#loadingIndicator{display:none !important}
   .header h1{font-size:14pt}
   .group-card{page-break-inside:avoid;border:1px solid #000;margin-bottom:10px;box-shadow:none}
   .group-header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -78,8 +75,11 @@ mark.search-hl{background:#ffe066;color:#000;padding:0 1px;border-radius:2px}
   <div class="login-box">
     <h2>🔐 Admin Login</h2>
     <p>Edit Mode के लिए Admin Login करें</p>
-    <input id="email" type="email" placeholder="Admin Email">
-    <input id="password" type="password" placeholder="Password">
+    <input id="email" type="email" placeholder="Admin Email" autocomplete="username">
+    <div class="pwd-wrap">
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+      <button type="button" id="togglePwdBtn" class="pwd-toggle" onclick="togglePassword()" title="Show/Hide password">👁️</button>
+    </div>
     <button class="login-btn" onclick="login()">LOGIN</button>
     <button class="login-btn" style="background:#777;margin-top:6px" onclick="closeLogin()">CANCEL</button>
     <div id="loginMsg" class="login-msg"></div>
@@ -105,7 +105,9 @@ mark.search-hl{background:#ffe066;color:#000;padding:0 1px;border-radius:2px}
   <div class="train-bar">
     Train: 12557 / SAPT KRANTI EXP | Boarding: BETTIAH (BTH) [18-Oct-2026, 13:58] | Destination: ANAND VIHAR TRM (ANVT) [19-Oct-2026, 07:40] | Distance: 937 KM
   </div>
-  <div id="modeStatus" class="status-bar">👁️ VIEW MODE</div><div id="syncStatus" class="status-bar">Firebase connecting...</div>
+  <div id="modeStatus" class="status-bar">👁️ VIEW MODE</div>
+  <div id="syncStatus" class="status-bar">Firebase connecting...</div>
+  <div id="lastUpdated" class="status-bar" style="font-size:7px;color:#666">Last updated: —</div>
 </div>
 
 <div id="filterBar" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin:5px 0">
@@ -115,6 +117,11 @@ mark.search-hl{background:#ffe066;color:#000;padding:0 1px;border-radius:2px}
   <button class="filter-btn" onclick="setFilter('PNR',this)">PNR</button>
   <button class="filter-btn" onclick="setFilter('BERTH',this)">BERTH</button>
   <button class="filter-btn" onclick="setFilter('EMPTY',this)">EMPTY</button>
+</div>
+
+<div id="loadingIndicator" style="text-align:center;padding:40px 20px;color:#082845;font-size:14px;font-weight:700">
+  <div style="font-size:32px;margin-bottom:10px">⏳</div>
+  Loading tickets... कृपया रुकें
 </div>
 
 <div id="groupsContainer"></div>
@@ -143,7 +150,6 @@ let firebaseReady = false;
 let syncTimer = null;
 let isEditMode = false;
 let activeFilter = "ALL";
-
 let undoStack = [];
 let redoStack = [];
 let lastRenderedJSON = "";
@@ -216,6 +222,12 @@ function setStatus(text, online=true){
   const e=document.getElementById("syncStatus");
   e.textContent=text;
   e.className="status-bar "+(online?"status-online":"status-offline");
+  const lu = document.getElementById("lastUpdated");
+  if(lu && online){
+    const now = new Date();
+    const time = now.toLocaleTimeString("hi-IN", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+    lu.textContent = "Last updated: " + time;
+  }
 }
 function formatPaymentBadge(text){
   if(!text || text==="-" ) return "-";
@@ -227,6 +239,11 @@ function formatPaymentBadge(text){
 function formatBerthBadge(text){
   if(!text || text==="-") return "-";
   return '<span class="badge-berth">'+esc(text)+'</span>';
+}
+function maskMobile(m){
+  if(!m || m === "-") return "-";
+  const s = String(m);
+  return "••••••" + s.slice(-4);
 }
 
 function getGroupSummary(grp){
@@ -268,7 +285,6 @@ function validateCell(cell){
   cell.style.background = ""; cell.title = "";
   return true;
 }
-
 function hasInvalidCells(){
   if(!isEditMode) return false;
   const cells = document.querySelectorAll('td[data-editable="true"]');
@@ -278,6 +294,9 @@ function hasInvalidCells(){
 }
 
 function renderTables(){
+  const loader = document.getElementById("loadingIndicator");
+  if(loader) loader.style.display = "none";
+
   const container=document.getElementById("groupsContainer");
   container.innerHTML="";
   currentData.forEach((grp,gIndex)=>{
@@ -298,7 +317,7 @@ function renderTables(){
       <td data-editable="true" data-field="dob">${esc(m.dob)}</td>
       <td data-editable="true" data-field="gender">${esc(m.gender)}</td>
       <td data-editable="true" data-field="age">${esc(m.age)}</td>
-      <td data-editable="true" data-field="mobile">${esc(m.mobile)}</td>
+      <td data-editable="true" data-field="mobile">${isEditMode ? esc(m.mobile) : maskMobile(m.mobile)}</td>
       <td data-editable="true" data-field="pay">${isEditMode?esc(m.pay==="-"?"":m.pay):formatPaymentBadge(m.pay)}</td>
       <td data-editable="true" data-field="pnr" class="pnr-cell" data-g="${gIndex}" data-m="${mIndex}">${isEditMode?esc(m.pnr==="-"?"":m.pnr):(String(m.pnr||"").trim() && String(m.pnr).trim()!=="-" ? '<span class="pnr-link">'+esc(m.pnr)+'</span>' : esc(m.pnr))}</td>
       <td data-editable="true" data-field="berth">${isEditMode?esc(m.berth==="-"?"":m.berth):formatBerthBadge(m.berth)}</td>
@@ -313,7 +332,7 @@ function renderTables(){
   updateUndoRedoButtons();
   lastRenderedJSON = JSON.stringify(currentData);
 }
-function pdfSafeText(value){
+  function pdfSafeText(value){
   return String(value ?? "-").replace(/\r?\n/g," ").replace(/[^\x20-\x7E]/g,"").replace(/[()\\]/g," ").trim() || "-";
 }
 function pdfEscape(value){
@@ -349,7 +368,6 @@ function makeTicketPdf(member, groupName){
   pdf+="trailer<< /Size "+(objs.length+1)+" /Root 1 0 R >>\\nstartxref\\n"+xref+"\\n%%EOF";
   return new Blob([pdf],{type:"application/pdf"});
 }
-
 function openTicketPDF(gIndex,mIndex){
   if(isEditMode) return;
   const grp = currentData[gIndex];
@@ -401,6 +419,8 @@ function applyEditModeClasses(){
 function collectEditedData(){
   document.querySelectorAll("tbody tr").forEach(tr=>{
     const g=Number(tr.dataset.g), m=Number(tr.dataset.m);
+    if(isNaN(g)||isNaN(m)) return;
+    if(!currentData[g] || !currentData[g].members[m]) return;
     tr.querySelectorAll("[data-editable=true]").forEach(td=>{
       const field=td.dataset.field;
       let val=td.innerText.trim();
@@ -465,6 +485,21 @@ function friendlyAuthError(msg){
   return AUTH_ERROR_MESSAGES[code] || "Login failed: " + msg;
 }
 
+function togglePassword(){
+  const pwd = document.getElementById("password");
+  const btn = document.getElementById("togglePwdBtn");
+  if(!pwd || !btn) return;
+  if(pwd.type === "password"){
+    pwd.type = "text";
+    btn.textContent = "🙈";
+    btn.title = "Hide password";
+  } else {
+    pwd.type = "password";
+    btn.textContent = "👁️";
+    btn.title = "Show password";
+  }
+}
+
 async function login(){
   const email=document.getElementById("email").value.trim();
   const password=document.getElementById("password").value;
@@ -484,6 +519,9 @@ async function login(){
     document.getElementById("modeStatus").textContent="✏️ ADMIN MODE";
     setStatus("Firebase connected",true);
     msg.textContent="";
+    document.getElementById("password").value="";
+    document.getElementById("password").type="password";
+    document.getElementById("togglePwdBtn").textContent="👁️";
   }catch(e){
     console.error(e);
     msg.style.color="#b71515"; msg.textContent=friendlyAuthError(e.message);
@@ -492,7 +530,11 @@ async function login(){
 function closeLogin(){
   document.getElementById("loginOverlay").classList.add("hidden");
   document.getElementById("loginMsg").textContent="";
+  document.getElementById("password").value="";
+  document.getElementById("password").type="password";
+  document.getElementById("togglePwdBtn").textContent="👁️";
 }
+
 async function saveData(){
   collectEditedData();
   const invalid = hasInvalidCells();
@@ -727,7 +769,6 @@ window.addEventListener("offline", () => {
 window.addEventListener("online", () => {
   setStatus(currentUser ? "Internet back — Firebase connected" : "Internet back — login required", true);
   hideOfflineBanner();
-  // Internet वापस आने पर तुरंत sync करो
   if(firebaseReady){
     clearInterval(syncTimer);
     syncTimer = null;
@@ -736,7 +777,6 @@ window.addEventListener("online", () => {
   }
 });
 
-/* === INIT === */
 renderTables();
 restoreSession();
 startFirebaseSync();
